@@ -1,0 +1,48 @@
+Project: HB Mailing System
+
+**1. Overview**
+
+The HB Mailing System is a sophisticated, professional single-page web application designed to revolutionize the email composition and sending process. It merges a premium, classic user interface with a powerful suite of AI-driven features, creating an indispensable tool for crafting high-quality business communications.
+
+Built as a Progressive Web App (PWA), it offers an installable, native-like experience on both desktop and mobile devices, complete with offline capabilities.
+
+**2. Core Features**
+
+The application is built around two main views: the Composer and the Inbox, each packed with intelligent functionality.
+
+**A. The AI-Powered Composer:**
+
+*   **AI Content Generation:** Users can input a simple prompt (e.g., "Draft a follow-up for the project proposal"), and the system's AI engine generates a complete, professionally written email, including multiple subject line options.
+*   **Subject Line Variations:** Instead of a single suggestion, the AI provides 3-5 distinct subject lines, allowing the user to select the most impactful one.
+*   **Tone & Style Modifier:** After content generation, users can refine the email's tone with one-click actions like "Make Formal," "Make Casual," "Shorten," or "Expand."
+*   **Content Improvement:** For manually written emails, an "Improve Content" button acts as an AI-powered proofreader, analyzing the text for clarity, grammar, and professionalism and suggesting a polished version.
+*   **Rich Text Editor (WYSIWYG):** The body is composed in a What-You-See-Is-What-You-Get editor, supporting formatting such as bold, italics, underlining, and lists.
+*   **Multi-Firm Identity:** Users can select from predefined "firms," which automatically populates the email's signature with the correct branding, address, and contact details.
+*   **Attachment Handling:** A modern drag-and-drop interface allows for easy attachment of multiple files.
+*   **Live Email Preview:** A pixel-perfect preview shows exactly how the final HTML email will appear in the recipient's inbox, ensuring professional presentation.
+
+**B. The Integrated Inbox:**
+
+*   **Recent Emails:** The application securely fetches and displays the 10 most recent emails from the user's Gmail account.
+*   **Backend-Powered Search:** To ensure performance and reliability, all searching is handled by the backend. Users can instantly filter their inbox by sender ("From") or subject.
+*   **Intelligent Smart Reply:** Users can open any email and use the "Smart Reply" feature. The AI analyzes the email's content and generates a contextually appropriate reply draft.
+*   **True Threaded Replies:** Replies generated via Smart Reply are sent as proper, threaded responses linked to the original email, ensuring conversations are correctly grouped in all mail clients.
+*   **Recipient Autocomplete:** The system learns from the inbox history. When composing an email, it suggests known contacts in the "To," "Cc," and "Bcc" fields, speeding up the addressing process.
+
+**C. Progressive Web App (PWA) Capabilities:**
+
+*   **Installable:** The application can be installed on a desktop or mobile home screen for quick and easy access.
+*   **Offline Capable:** The core application shell and assets are cached, allowing the app to load and function even without an internet connection.
+
+**3. Technical Architecture**
+
+The system is built with a modern, decoupled architecture:
+
+*   **Frontend:** A responsive and dynamic user interface built with **React** and **TypeScript**. State management is handled within React components using hooks. The professional styling is achieved with **Tailwind CSS**.
+*   **Backend:** A serverless backend powered by **Google Apps Script**. This script acts as a secure intermediary, handling all interactions with the user's **Gmail account**. It is responsible for sending emails, fetching the inbox, performing searches, and rendering email previews.
+*   **AI Engine:** All intelligent features (content generation, refinement, smart replies) are powered by the **Google Gemini API**.
+*   **PWA Technology:** A **Service Worker** manages asset caching and offline functionality, while a **Web App Manifest** defines the application's installable properties.
+
+**4. Design Philosophy**
+
+The application's design is guided by principles of professionalism, elegance, and efficiency. It features a dark-mode UI with amber accents to create a premium feel. The layout is clean, intuitive, and designed to minimize distractions, allowing the user to focus on crafting the perfect message.

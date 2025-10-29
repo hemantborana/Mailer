@@ -1,7 +1,7 @@
 const CACHE_NAME = 'hb-mail-cache-v1';
 const URLS_TO_CACHE = [
-  '/',
-  '/index.html',
+  '.',
+  'index.html',
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500&display=swap',
 ];
 

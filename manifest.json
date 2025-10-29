@@ -1,0 +1,22 @@
+{
+  "name": "HB Mailing System",
+  "short_name": "HB Mail",
+  "description": "A sophisticated web application for composing and sending professionally formatted emails with advanced AI-powered content generation, tone modification, an integrated inbox for smart replies, and a rich text editor.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

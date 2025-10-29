@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FirmSelector } from './components/FirmSelector';
 import { RecipientInput } from './components/RecipientInput';
 import { Composer } from './components/Composer';
@@ -28,6 +28,8 @@ const App: React.FC = () => {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [previewHtml, setPreviewHtml] = useState('');
+    const [replyContext, setReplyContext] = useState<{ threadId: string } | null>(null);
+    const [knownContacts, setKnownContacts] = useState<string[]>([]);
     
     const resetForm = useCallback(() => {
         setTo([]);
@@ -36,15 +38,20 @@ const App: React.FC = () => {
         setSubject('');
         setBody('');
         setAttachments([]);
+        setReplyContext(null);
+    }, []);
+    
+    const handleContactsLoaded = useCallback((contacts: string[]) => {
+        setKnownContacts(prev => Array.from(new Set([...prev, ...contacts])));
     }, []);
 
     const handleSend = useCallback(async () => {
-        if (to.length === 0) {
+        if (!replyContext && to.length === 0) {
             setErrorMessage('Please add at least one recipient in "To".');
             setStatus('error');
             return;
         }
-        if (!subject) {
+        if (!replyContext && !subject) {
             setErrorMessage('Subject cannot be empty.');
             setStatus('error');
             return;
@@ -68,6 +75,7 @@ const App: React.FC = () => {
                 subject,
                 body,
                 attachments,
+                threadId: replyContext?.threadId,
             };
             const response = await sendEmail(payload);
 
@@ -83,7 +91,7 @@ const App: React.FC = () => {
             setErrorMessage(error.message || 'Failed to send email. Check console for details.');
             setStatus('error');
         }
-    }, [selectedFirm, to, cc, bcc, subject, body, attachments, resetForm]);
+    }, [selectedFirm, to, cc, bcc, subject, body, attachments, resetForm, replyContext]);
 
     const handlePreview = async () => {
         setStatus('sending');
@@ -118,49 +126,51 @@ const App: React.FC = () => {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: "gemini-2.5-flash",
-                contents: `Read the following email and generate a professional and helpful reply. The original email subject was "${email.subject}". The body was: "${email.body}".`,
+                contents: `Read the following email and generate a professional and helpful reply body. The original email subject was "${email.subject}". The body was: "${email.body}".`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            subject: {
-                                type: Type.STRING,
-                                description: 'A concise and professional reply subject line, often starting with "Re:".'
-                            },
                             body: {
                                 type: Type.STRING,
                                 description: 'The full body of the reply email, written in a professional and clear tone. Use HTML paragraphs for line breaks.'
                             },
                         },
-                        required: ["subject", "body"]
+                        required: ["body"]
                     },
                 },
             });
             const text = response.text.trim();
             const generated = JSON.parse(text);
             
-            // Safely extract email address from "From" field
             const extractEmail = (from: string): string => {
-                // Guard against undefined or non-string inputs
                 if (typeof from !== 'string') return '';
                 const match = from.match(/<(.+)>/);
                 return match ? match[1] : from;
             };
 
-            // Populate composer
-            setSubject(generated.subject);
+            // Populate composer for reply
+            setSubject(''); // Subject is implicit in a reply thread
             setBody(generated.body);
-            setTo([extractEmail(email.from)]);
+            setTo([extractEmail(email.from)]); // Pre-fill 'To' with the original sender
             setCc([]);
             setBcc([]);
             setAttachments([]);
+
+            // Set context for sending as a threaded reply
+            if (email.threadId) {
+                setReplyContext({ threadId: email.threadId });
+            } else {
+                 setReplyContext(null);
+            }
 
         } catch (e: any) {
             console.error("Smart Reply Error:", e);
             setErrorMessage("Failed to generate smart reply.");
             setStatus('error');
-            setBody(''); // Clear placeholder on error
+            setBody(''); 
+            setReplyContext(null);
         } finally {
             setStatus('idle');
         }
@@ -206,9 +216,9 @@ const App: React.FC = () => {
                         <>
                             <FirmSelector firms={Object.values(FIRMS)} selectedFirm={selectedFirm} onSelectFirm={setSelectedFirm} />
                             <div className="border-b border-gray-700"></div>
-                            <RecipientInput to={to} setTo={setTo} cc={cc} setCc={setCc} bcc={bcc} setBcc={setBcc} />
+                            <RecipientInput to={to} setTo={setTo} cc={cc} setCc={setCc} bcc={bcc} setBcc={setBcc} knownContacts={knownContacts} isReply={!!replyContext} />
                             <div className="border-b border-gray-700"></div>
-                            <Composer subject={subject} setSubject={setSubject} body={body} setBody={setBody} />
+                            <Composer subject={subject} setSubject={setSubject} body={body} setBody={setBody} isReply={!!replyContext} />
                             <AttachmentHandler attachments={attachments} setAttachments={setAttachments} />
                             <div className="border-b border-gray-700"></div>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -223,7 +233,7 @@ const App: React.FC = () => {
                             </div>
                         </>
                     ) : (
-                       <Inbox onSmartReply={handleSmartReply} />
+                       <Inbox onSmartReply={handleSmartReply} onContactsLoaded={handleContactsLoaded} />
                     )}
                 </div>
             </main>

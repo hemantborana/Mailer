@@ -15,6 +15,7 @@ interface EmailPayload extends BasePayload {
     subject: string;
     body: string; // Now HTML
     attachments: AttachmentFile[];
+    threadId?: string;
 }
 
 interface InboxPayload extends BasePayload {

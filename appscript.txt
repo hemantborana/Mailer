@@ -54,15 +54,26 @@ function handleSendEmail(data) {
   var htmlBody = generateHtmlEmail(selectedFirm, data.body, data.attachments);
 
   var mailOptions = {
-    to: data.to,
     cc: data.cc,
     bcc: data.bcc,
-    subject: data.subject,
     htmlBody: htmlBody,
     attachments: attachments
   };
+  
+  if (data.threadId) {
+    // This is a reply, use the thread to send.
+    // The 'to' and 'subject' are handled automatically by the reply method.
+    var thread = GmailApp.getThreadById(data.threadId);
+    if (thread) {
+      thread.reply("", mailOptions); // Body is empty because htmlBody is in options
+    } else {
+      throw new Error("Could not find the original thread to reply to.");
+    }
+  } else {
+    // This is a new email.
+    GmailApp.sendEmail(data.to, data.subject, "This email requires an HTML-compatible viewer.", mailOptions);
+  }
 
-  GmailApp.sendEmail(data.to, data.subject, "This email requires an HTML-compatible viewer.", mailOptions);
 
   return ContentService.createTextOutput(JSON.stringify({
     result: 'success',
@@ -77,7 +88,6 @@ function handleFetchInbox(data) {
   
   var query = 'in:inbox';
   if (searchTerm) {
-    // Sanitize searchTerm to prevent query injection issues, though less critical in Apps Script.
     var sanitizedSearchTerm = searchTerm.replace(/"/g, '\\"');
     query = searchType + ':"' + sanitizedSearchTerm + '" in:inbox';
   }
@@ -86,17 +96,18 @@ function handleFetchInbox(data) {
   var emails = [];
 
   for (var i = 0; i < threads.length; i++) {
-    var messages = threads[i].getMessages();
+    var thread = threads[i];
+    var messages = thread.getMessages();
     if (messages && messages.length > 0) {
-      // Use the most recent message in the thread for display
       var message = messages[messages.length - 1];
       if (message) {
         emails.push({
           id: message.getId() || ('thread-' + i),
+          threadId: thread.getId(),
           from: message.getFrom() || '[No Sender]',
           subject: message.getSubject() || '[No Subject]',
           date: message.getDate() ? message.getDate().toISOString() : new Date().toISOString(),
-          body: message.getPlainBody() ? message.getPlainBody().substring(0, 500) : '[No Body]'
+          body: message.getPlainBody() ? message.getPlainBody().substring(0, 500) : '[No Body]',
         });
       }
     }

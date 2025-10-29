@@ -8,6 +8,7 @@ interface ComposerProps {
     setSubject: (subject: string) => void;
     body: string;
     setBody: (body: string) => void;
+    isReply?: boolean;
 }
 
 const INPUT_CLASS = "w-full bg-gray-700 border border-gray-600 rounded-md p-3 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none transition";
@@ -20,7 +21,7 @@ const TONE_MODIFIERS = [
     { label: 'Expand', prompt: 'expand on the details' },
 ];
 
-export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, setBody }) => {
+export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, setBody, isReply }) => {
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isRefining, setIsRefining] = useState(false);
@@ -107,7 +108,7 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
                         type="text"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="e.g., 'Draft a follow-up for the project proposal sent yesterday'"
+                        placeholder={isReply ? "e.g., 'Summarize and agree to the proposal'" : "e.g., 'Draft a follow-up for the project proposal'"}
                         className={INPUT_CLASS}
                         disabled={isGenerating || isRefining}
                     />
@@ -125,31 +126,33 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
 
             <div className="border-b border-gray-700 my-4"></div>
 
-            <div>
-                <label htmlFor="subject" className="block font-display text-lg font-semibold text-amber-400 mb-2">Subject</label>
-                <input
-                    id="subject"
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="Enter email subject"
-                    className={INPUT_CLASS}
-                />
-                 {subjectVariations.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                        <span className="text-sm font-semibold text-gray-400 mr-2">Suggestions:</span>
-                        {subjectVariations.map((sub, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setSubject(sub)}
-                                className={`px-2 py-0.5 text-xs rounded-full transition-colors ${subject === sub ? 'bg-amber-400 text-gray-900 font-bold' : 'bg-gray-600 hover:bg-gray-500'}`}
-                            >
-                                {sub}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
+            {!isReply && (
+                <div>
+                    <label htmlFor="subject" className="block font-display text-lg font-semibold text-amber-400 mb-2">Subject</label>
+                    <input
+                        id="subject"
+                        type="text"
+                        value={subject}
+                        onChange={(e) => setSubject(e.target.value)}
+                        placeholder="Enter email subject"
+                        className={INPUT_CLASS}
+                    />
+                    {subjectVariations.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            <span className="text-sm font-semibold text-gray-400 mr-2">Suggestions:</span>
+                            {subjectVariations.map((sub, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setSubject(sub)}
+                                    className={`px-2 py-0.5 text-xs rounded-full transition-colors ${subject === sub ? 'bg-amber-400 text-gray-900 font-bold' : 'bg-gray-600 hover:bg-gray-500'}`}
+                                >
+                                    {sub}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
             <div>
                 <div className="flex justify-between items-center mb-2">
                     <label htmlFor="body" className="block font-display text-lg font-semibold text-amber-400">Body</label>

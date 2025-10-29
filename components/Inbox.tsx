@@ -4,6 +4,7 @@ import { fetchInboxEmails } from '../services/emailService';
 
 interface InboxProps {
     onSmartReply: (email: EmailData) => void;
+    onContactsLoaded: (contacts: string[]) => void;
 }
 
 // Custom hook for debouncing a value
@@ -54,7 +55,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ email, onClose, onSmartReply 
     )
 }
 
-export const Inbox: React.FC<InboxProps> = ({ onSmartReply }) => {
+export const Inbox: React.FC<InboxProps> = ({ onSmartReply, onContactsLoaded }) => {
     const [emails, setEmails] = useState<EmailData[]>([]);
     const [initialSenders, setInitialSenders] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
@@ -64,6 +65,7 @@ export const Inbox: React.FC<InboxProps> = ({ onSmartReply }) => {
     const [selectedEmail, setSelectedEmail] = useState<EmailData | null>(null);
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const initialLoadDone = useRef(false);
     
     // Debounce search term to prevent excessive API calls while typing
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -75,14 +77,18 @@ export const Inbox: React.FC<InboxProps> = ({ onSmartReply }) => {
         try {
             const response = await fetchInboxEmails(term, type);
             if (response.result === 'success') {
-                setEmails(response.emails || []);
-                // If this is the initial load, populate the sender suggestions
-                if (!term && (!initialSenders || initialSenders.length === 0)) {
+                const fetchedEmails = response.emails || [];
+                setEmails(fetchedEmails);
+                
+                if (!term && !initialLoadDone.current) {
                     const senders = new Set<string>();
-                    (response.emails || []).forEach((email: EmailData) => {
+                    fetchedEmails.forEach((email: EmailData) => {
                         if (email && email.from) senders.add(email.from);
                     });
-                    setInitialSenders(Array.from(senders));
+                    const senderArray = Array.from(senders);
+                    setInitialSenders(senderArray);
+                    onContactsLoaded(senderArray);
+                    initialLoadDone.current = true;
                 }
             } else {
                 throw new Error(response.message || 'Failed to fetch emails.');
@@ -92,7 +98,7 @@ export const Inbox: React.FC<InboxProps> = ({ onSmartReply }) => {
         } finally {
             setLoading(false);
         }
-    }, [initialSenders]);
+    }, [onContactsLoaded]);
 
     // Effect for fetching emails when debounced search term or type changes
     useEffect(() => {

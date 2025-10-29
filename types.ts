@@ -13,6 +13,7 @@ export interface AttachmentFile {
 
 export interface EmailData {
   id: string;
+  threadId: string;
   from: string;
   subject: string;
   date: string;

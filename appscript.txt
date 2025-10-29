@@ -1,0 +1,122 @@
+
+// doGet function runs when someone visits the script URL in a browser.
+// This provides a user-friendly confirmation that the script is active.
+function doGet(e) {
+  return HtmlService.createHtmlOutput(
+    "<h1>AuraMail Backend Script</h1><p>This script is active and ready to receive email data from the AuraMail web application.</p>"
+  ).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+// doPost function runs when the web app sends data (a POST request) to the script.
+// This is the main function that processes and sends the email.
+function doPost(e) {
+  try {
+    // The incoming data is a JSON string, so we need to parse it.
+    var data = JSON.parse(e.postData.contents);
+
+    // --- Firm Data ---
+    // This should mirror the data in your frontend application.
+    var firms = {
+      'HC': {
+        'name': 'Hreenkar Creation',
+        'gstin': '30AACPB7378Q1ZH',
+        'address': 'COSMOS CENTER SHOP NO 32 GROUND FLOOR MOROD MAPUSA Goa 403507',
+        'mobile': '9422593814 / 8888099776'
+      },
+      'KA': {
+        'name': 'Kambeshwar Agencies',
+        'address': 'Upper Ground Floor, Shop No. 6, Essar Trade Centre, Shashikant Narvekar Road, Morod, Mapusa, North Goa, Goa, 403507',
+        'mobile': '9422593814 / 8888099776'
+      }
+    };
+    var selectedFirm = firms[data.firmKey] || firms['HC']; // Default to HC if key is invalid
+
+    // --- Attachment Processing ---
+    var attachments = [];
+    if (data.attachments && data.attachments.length > 0) {
+      for (var i = 0; i < data.attachments.length; i++) {
+        var attachment = data.attachments[i];
+        var decodedData = Utilities.base64Decode(attachment.data);
+        var blob = Utilities.newBlob(decodedData, attachment.mimeType, attachment.filename);
+        attachments.push(blob);
+      }
+    }
+
+    // --- HTML Email Template with INLINED CSS ---
+    // This is the core of the professional email. All styles are applied directly
+    // to the elements to ensure they render correctly in all email clients.
+
+    // Helper to generate the attachment HTML cards
+    var attachmentHtml = '';
+    if (attachments.length > 0) {
+       attachmentHtml += '<div style="font-size: 13px; color: #888888; letter-spacing: 2px; text-transform: uppercase; margin: 35px 0 20px 0; text-align: center; font-weight: bold;">◆ Enclosed Documents ◆</div>';
+       data.attachments.forEach(function(file) {
+           var fileSize = (Utilities.base64Decode(file.data).length / 1024).toFixed(2) + ' KB';
+           attachmentHtml += '<div style="background-color: #1a1a1a; border: 1px solid #d4af37; border-radius: 4px; padding: 25px 30px; margin-bottom: 15px;">' +
+                               '<div style="font-size: 12px; color: #d4af37; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; font-weight: bold;">' + file.mimeType.toUpperCase() + '</div>' +
+                               '<div style="font-size: 18px; color: #ffffff; font-weight: bold; font-family: \'Courier New\', monospace; margin-bottom: 8px; word-break: break-all;">' + file.filename + '</div>' +
+                               '<div style="font-size: 14px; color: #999999;">' + fileSize + '</div>' +
+                             '</div>';
+       });
+    }
+
+    var emailBodyHtml = data.body.replace(/\n/g, '<br>');
+
+    var htmlBody = '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>' +
+      '<body style="margin: 0; padding: 0; box-sizing: border-box; font-family: \'Georgia\', \'Times New Roman\', serif; line-height: 1.6; background-color: #f5f5f5; padding: 20px 0;">' +
+        '<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 900px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0;">' +
+          '<tr><td style="height: 4px; background-color: #d4af37;"></td></tr>' +
+          '<tr><td style="background-color: #1a1a1a; padding: 50px 40px; text-align: center; border-bottom: 2px solid #d4af37;">' +
+            '<div style="font-size: 48px; font-weight: 300; color: #ffffff; letter-spacing: 8px; margin-bottom: 20px; text-transform: uppercase; font-family: \'Georgia\', serif;">' + selectedFirm.name.toUpperCase() + '</div>' +
+            '<div style="width: 120px; height: 1px; background-color: #d4af37; margin: 20px auto;"></div>' +
+          '</td></tr>' +
+          '<tr><td style="padding: 50px 60px; color: #333333;">' +
+            '<div style="font-size: 16px; line-height: 1.8; color: #333333; margin-bottom: 20px; text-align: left; white-space: pre-wrap;">' + emailBodyHtml + '</div>' +
+            attachmentHtml +
+            '<div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid #e0e0e0; text-align: left;">' +
+              '<div style="text-align: center; color: #d4af37; margin-bottom: 20px; font-size: 16px;">◆</div>' +
+              '<div style="font-size: 15px; color: #666666; margin-bottom: 15px; font-style: italic;">With warm regards,</div>' +
+              '<div style="font-size: 18px; color: #1a1a1a; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase;">' + selectedFirm.name + '</div>' +
+              '<div style="font-size: 14px; color: #666666; line-height: 1.6; margin-bottom: 5px;">' + selectedFirm.address + '</div>' +
+              '<div style="font-size: 14px; color: #666666; line-height: 1.6; margin-bottom: 5px;">Mobile: ' + selectedFirm.mobile + '</div>' +
+              (selectedFirm.gstin ? '<div style="font-size: 14px; color: #666666; line-height: 1.6; margin-bottom: 5px;">GSTIN: ' + selectedFirm.gstin + '</div>' : '') +
+            '</div>' +
+          '</td></tr>' +
+          '<tr><td style="background-color: #f5f5f5; padding: 25px; border-top: 2px solid #d4af37; text-align: center; font-size: 12px; color: #999999; letter-spacing: 1px;">' +
+            '<div style="margin-bottom: 12px; text-transform: uppercase; font-weight: bold;">Professional Email System</div>' +
+            '<div style="font-size: 11px; color: #aaaaaa;">Developed by <span style="color: #666666; font-weight: bold;">Hemant Borana</span></div>' +
+          '</td></tr>' +
+        '</table>' +
+      '</body></html>';
+
+    // --- Email Sending Options ---
+    var mailOptions = {
+      to: data.to,
+      cc: data.cc,
+      bcc: data.bcc,
+      subject: data.subject,
+      body: data.body, // Plain text fallback
+      htmlBody: htmlBody, // Rich HTML version
+      attachments: attachments
+    };
+
+    // Send the email
+    GmailApp.sendEmail(data.to, data.subject, data.body, mailOptions);
+
+    // --- Success Response ---
+    // Return a success message back to the web app.
+    return ContentService.createTextOutput(JSON.stringify({
+      result: 'success',
+      message: 'Email sent successfully!'
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    // --- Error Handling ---
+    // If anything goes wrong, log the error and return a failure message.
+    Logger.log(error.toString());
+    return ContentService.createTextOutput(JSON.stringify({
+      result: 'error',
+      message: error.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}

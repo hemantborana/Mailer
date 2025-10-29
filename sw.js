@@ -2,6 +2,7 @@ const CACHE_NAME = 'hb-mail-cache-v1';
 const URLS_TO_CACHE = [
   '.',
   'index.html',
+  'manifest.json',
   'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500&display=swap',
 ];
 
@@ -21,9 +22,15 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network-first strategy
   event.respondWith(
     fetch(event.request)
       .then(response => {
+        // Check if we received a valid response
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
         const responseToCache = response.clone();
         caches.open(CACHE_NAME)
           .then(cache => {
@@ -32,7 +39,9 @@ self.addEventListener('fetch', event => {
         return response;
       })
       .catch(() => {
-        return caches.match(event.request);
+        return caches.match(event.request).then(response => {
+            return response || caches.match('index.html'); // Fallback to index
+        });
       })
   );
 });

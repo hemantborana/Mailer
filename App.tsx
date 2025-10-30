@@ -13,7 +13,6 @@ import { LogoIcon } from './components/icons/LogoIcon';
 import { ComposerIcon } from './components/icons/ComposerIcon';
 import { InboxIcon } from './components/icons/InboxIcon';
 
-
 const App: React.FC = () => {
     const [view, setView] = useState<'composer' | 'inbox'>('composer');
     const [selectedFirm, setSelectedFirm] = useState<Firm>(FIRMS.HC);
@@ -123,7 +122,7 @@ const App: React.FC = () => {
         setErrorMessage('');
         
         try {
-            const response = await fetch('/.netlify/functions/anthropic-proxy', {
+            const response = await fetch('/.netlify/functions/gemini-proxy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -213,44 +212,26 @@ const App: React.FC = () => {
                     {view === 'composer' ? (
                         <>
                             <FirmSelector firms={Object.values(FIRMS)} selectedFirm={selectedFirm} onSelectFirm={setSelectedFirm} />
-                            <div className="border-b border-gray-700"></div>
                             <RecipientInput to={to} setTo={setTo} cc={cc} setCc={setCc} bcc={bcc} setBcc={setBcc} knownContacts={knownContacts} isReply={!!replyContext} />
-                            <div className="border-b border-gray-700"></div>
                             <Composer subject={subject} setSubject={setSubject} body={body} setBody={setBody} isReply={!!replyContext} />
                             <AttachmentHandler attachments={attachments} setAttachments={setAttachments} />
-                            <div className="border-b border-gray-700"></div>
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <SendButton status={status} errorMessage={errorMessage} onSend={handleSend} />
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
                                 <button 
                                     onClick={handlePreview}
-                                    className="text-amber-400 hover:text-amber-300 font-semibold"
                                     disabled={status === 'sending'}
+                                    className="w-full sm:w-auto text-amber-400 font-bold px-8 py-3 rounded-md border-2 border-amber-500/50 hover:bg-amber-500/10 transition"
                                 >
                                     Preview Email
                                 </button>
+                                <SendButton status={status} errorMessage={errorMessage} onSend={handleSend} />
                             </div>
                         </>
                     ) : (
-                       <Inbox onSmartReply={handleSmartReply} onContactsLoaded={handleContactsLoaded} />
+                        <Inbox onSmartReply={handleSmartReply} onContactsLoaded={handleContactsLoaded}/>
                     )}
                 </div>
             </main>
-
-            <footer className="w-full max-w-5xl mx-auto text-center text-gray-500 mt-8 text-sm">
-                <p>Professional Email System</p>
-                <p>Developed by <span className="font-semibold text-gray-400">Hemant Borana</span></p>
-            </footer>
-
-            {isPreviewOpen && (
-                <EmailPreviewModal
-                    htmlContent={previewHtml}
-                    onClose={() => setIsPreviewOpen(false)}
-                    firm={selectedFirm}
-                    subject={subject}
-                    to={to}
-                    cc={cc}
-                />
-            )}
+            {isPreviewOpen && <EmailPreviewModal htmlContent={previewHtml} onClose={() => setIsPreviewOpen(false)} firm={selectedFirm} subject={subject} to={to} cc={cc} />}
         </div>
     );
 };

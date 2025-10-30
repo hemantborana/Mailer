@@ -38,7 +38,7 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
         setSubjectVariations([]);
         setContentGenerated(false);
         try {
-            const response = await fetch('/.netlify/functions/anthropic-proxy', {
+            const response = await fetch('/.netlify/functions/gemini-proxy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -71,7 +71,7 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
         setIsRefining(true);
         setError('');
         try {
-            const response = await fetch('/.netlify/functions/anthropic-proxy', {
+            const response = await fetch('/.netlify/functions/gemini-proxy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

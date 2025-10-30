@@ -12,7 +12,6 @@ import { sendEmail, getPreviewHtml } from './services/emailService';
 import { LogoIcon } from './components/icons/LogoIcon';
 import { ComposerIcon } from './components/icons/ComposerIcon';
 import { InboxIcon } from './components/icons/InboxIcon';
-import { GoogleGenAI, Type } from "@google/genai";
 
 
 const App: React.FC = () => {
@@ -121,28 +120,27 @@ const App: React.FC = () => {
         setStatus('sending');
         setView('composer'); // Switch to composer view
         setBody('<p>Generating smart reply...</p>'); // Placeholder
+        setErrorMessage('');
         
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `Read the following email and generate a professional and helpful reply body. The original email subject was "${email.subject}". The body was: "${email.body}".`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            body: {
-                                type: Type.STRING,
-                                description: 'The full body of the reply email, written in a professional and clear tone. Use HTML paragraphs for line breaks.'
-                            },
-                        },
-                        required: ["body"]
-                    },
-                },
+            const response = await fetch('/.netlify/functions/anthropic-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task: 'smart-reply',
+                    prompt: {
+                        subject: email.subject,
+                        body: email.body,
+                    }
+                })
             });
-            const text = response.text.trim();
-            const generated = JSON.parse(text);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate smart reply.');
+            }
+
+            const generated = await response.json();
             
             const extractEmail = (from: string): string => {
                 if (typeof from !== 'string') return '';
@@ -167,7 +165,7 @@ const App: React.FC = () => {
 
         } catch (e: any) {
             console.error("Smart Reply Error:", e);
-            setErrorMessage("Failed to generate smart reply.");
+            setErrorMessage(e.message || "Failed to generate smart reply.");
             setStatus('error');
             setBody(''); 
             setReplyContext(null);

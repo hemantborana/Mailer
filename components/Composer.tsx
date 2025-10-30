@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
 import { SparklesIcon } from './icons/SparklesIcon';
 import { RichTextEditor } from './RichTextEditor';
 
@@ -39,31 +38,21 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
         setSubjectVariations([]);
         setContentGenerated(false);
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `Based on the following prompt, generate a professional email. \n\nPROMPT: "${prompt}"`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            subjectVariations: {
-                                type: Type.ARRAY,
-                                description: 'An array of 3 to 5 concise and professional subject line variations for the email.',
-                                items: { type: Type.STRING }
-                            },
-                            body: {
-                                type: Type.STRING,
-                                description: 'The full body of the email, written in a professional and clear tone. Use HTML paragraphs for line breaks.'
-                            },
-                        },
-                        required: ["subjectVariations", "body"]
-                    },
-                },
+            const response = await fetch('/.netlify/functions/anthropic-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task: 'generate',
+                    prompt: prompt,
+                })
             });
-            const text = response.text.trim();
-            const generated = JSON.parse(text);
+
+            if (!response.ok) {
+                 const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to generate content.');
+            }
+            
+            const generated = await response.json();
 
             setSubject(generated.subjectVariations[0] || '');
             setSubjectVariations(generated.subjectVariations || []);
@@ -72,7 +61,7 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
 
         } catch (e: any) {
             console.error("AI Generation Error:", e);
-            setError("Failed to generate content. Please try again.");
+            setError(e.message || "Failed to generate content. Please try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -82,15 +71,28 @@ export const Composer: React.FC<ComposerProps> = ({ subject, setSubject, body, s
         setIsRefining(true);
         setError('');
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `Take the following email body and rewrite it to ${instruction}. Keep the core message intact and return only the rewritten HTML body content. \n\nBODY: "${baseText}"`,
+            const response = await fetch('/.netlify/functions/anthropic-proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task: 'refine',
+                    prompt: {
+                        body: baseText,
+                        instruction: instruction
+                    }
+                })
             });
-            setBody(response.text.trim());
-        } catch (e) {
+
+            if (!response.ok) {
+                 const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to refine content.');
+            }
+
+            const result = await response.json();
+            setBody(result.body);
+        } catch (e: any) {
             console.error("AI Refinement Error:", e);
-            setError("Failed to refine content. Please try again.");
+            setError(e.message || "Failed to refine content. Please try again.");
         } finally {
             setIsRefining(false);
         }

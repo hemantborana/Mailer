@@ -1,0 +1,14 @@
+# Netlify configuration file
+
+# This section tells Netlify where to find your serverless functions.
+[build]
+  functions = "netlify/functions/"
+
+# This rule is crucial for single-page applications (SPAs) like React.
+# It ensures that any request to a path that doesn't match a file
+# is redirected to your main index.html file, allowing React Router
+# (or in this case, your app's view logic) to handle the routing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
